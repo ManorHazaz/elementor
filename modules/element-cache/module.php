@@ -55,7 +55,9 @@ class Module extends BaseModule {
 				return '';
 			}
 
-			$widget_data = json_decode( base64_decode( $atts['data'] ), true );
+			$sanitized_data_attr = wp_kses_post( base64_decode( $atts['data'] ) ?? '' );
+
+			$widget_data = json_decode( $sanitized_data_attr, true );
 
 			if ( empty( $widget_data ) || ! is_array( $widget_data ) ) {
 				return '';
