@@ -33,18 +33,12 @@ const TemplateLibraryCollectionView = Marionette.CompositeView.extend( {
 		selectGridView: '#elementor-template-library-view-grid',
 		selectListView: '#elementor-template-library-view-list',
 		bulkSelectionItemCheckbox: '.bulk-selection-item-checkbox',
-		bulkSelectionActionBar: '.bulk-selection-action-bar',
-		bulkActionBarDelete: '.bulk-selection-action-bar .bulk-delete i',
-		bulkSelectedCount: '.bulk-selection-action-bar .selected-count',
 		bulkSelectAllCheckbox: '#bulk-select-all',
-		clearBulkSelections: '.bulk-selection-action-bar .clear-bulk-selections',
-		bulkMove: '.bulk-selection-action-bar .bulk-move',
-		bulkCopy: '.bulk-selection-action-bar .bulk-copy',
 		quota: '.quota-progress-container .quota-progress-bar',
 		quotaFill: '.quota-progress-container  .quota-progress-bar .quota-progress-bar-fill',
 		quotaValue: '.quota-progress-container .quota-progress-bar-value',
 		quotaWarning: '.quota-progress-container .progress-bar-container .quota-warning',
-		navigationContainer: '#elementor-template-library-navigation-container',
+		leftSideActionsSlot: '#left-side-actions-slot',
 	},
 
 	events: {
@@ -56,14 +50,7 @@ const TemplateLibraryCollectionView = Marionette.CompositeView.extend( {
 		'click @ui.addNewFolder': 'onCreateNewFolderClick',
 		'click @ui.selectGridView': 'onSelectGridViewClick',
 		'click @ui.selectListView': 'onSelectListViewClick',
-		'change @ui.bulkSelectionItemCheckbox': 'onSelectBulkSelectionItemCheckbox',
 		'change @ui.bulkSelectAllCheckbox': 'onBulkSelectAllCheckbox',
-		'click @ui.clearBulkSelections': 'onClearBulkSelections',
-		'mouseenter @ui.bulkMove': 'onHoverBulkAction',
-		'mouseenter @ui.bulkCopy': 'onHoverBulkAction',
-		'click @ui.bulkMove': 'onClickBulkMove',
-		'click @ui.bulkActionBarDelete': 'onBulkDeleteClick',
-		'click @ui.bulkCopy': 'onClickBulkCopy',
 	},
 
 	className: 'no-bulk-selections',
@@ -125,79 +112,6 @@ const TemplateLibraryCollectionView = Marionette.CompositeView.extend( {
 		}
 
 		return QUOTA_BAR_STATES.ALERT;
-	},
-
-	onClearBulkSelections() {
-		elementor.templates.clearBulkSelectionItems();
-		elementor.templates.layout.handleBulkActionBar();
-		elementor.templates.layout.selectAllCheckboxNormal();
-		this.deselectAllBulkItems();
-	},
-
-	deselectAllBulkItems() {
-		if ( 'list' === elementor.templates.getViewSelection() || 'local' === elementor.templates.getFilter( 'source' ) ) {
-			this.ui.bulkSelectAllCheckbox.prop( 'checked', false ).trigger( 'change' );
-		} else {
-			document.querySelectorAll( '.bulk-selected-item' ).forEach( function( item ) {
-				item.classList.remove( 'bulk-selected-item' );
-			} );
-		}
-	},
-
-	onSelectBulkSelectionItemCheckbox( event ) {
-		if ( event?.target?.checked ) {
-			elementor.templates.addBulkSelectionItem( event.target.dataset.template_id );
-		} else {
-			elementor.templates.removeBulkSelectionItem( event.target.dataset.template_id );
-		}
-
-		this.handleBulkActionBarUi();
-	},
-
-	onBulkSelectAllCheckbox() {
-		const isChecked = this.$( '#bulk-select-all:checked' ).length > 0;
-
-		if ( isChecked ) {
-			elementor.templates.layout.selectAllCheckboxNormal();
-		}
-
-		this.updateBulkSelectedItems( isChecked );
-		this.handleBulkActionBarUi();
-	},
-
-	updateBulkSelectedItems( isChecked ) {
-		document.querySelectorAll( '.bulk-selection-item-checkbox' ).forEach( function( checkbox ) {
-			checkbox.checked = isChecked;
-			const templateId = checkbox.dataset.template_id;
-
-			if ( isChecked ) {
-				elementor.templates.addBulkSelectionItem( templateId );
-			} else {
-				elementor.templates.removeBulkSelectionItem( templateId );
-			}
-		} );
-	},
-
-	handleBulkActionBarUi() {
-		if ( 0 === this.$( '.bulk-selection-item-checkbox:checked' ).length ) {
-			this.$el.addClass( 'no-bulk-selections' );
-			this.$el.removeClass( 'has-bulk-selections' );
-		} else {
-			this.$el.addClass( 'has-bulk-selections' );
-			this.$el.removeClass( 'no-bulk-selections' );
-		}
-
-		elementor.templates.layout.handleBulkActionBar();
-	},
-
-	onBulkDeleteClick() {
-		this.ui.bulkActionBarDelete.toggleClass( 'disabled' );
-
-		elementor.templates.onBulkDeleteClick()
-			.finally( () => {
-				this.ui.bulkActionBarDelete.toggleClass( 'disabled' );
-				elementor.templates.layout.handleBulkActionBar();
-			} );
 	},
 
 	comparators: {
@@ -555,46 +469,27 @@ const TemplateLibraryCollectionView = Marionette.CompositeView.extend( {
 		} );
 	},
 
-	onHoverBulkAction() {
-		if ( this.hasFolderInBulkSelection() ) {
-			this.ui.bulkMove.find( 'i' ).css( 'cursor', 'not-allowed' );
-			this.ui.bulkCopy.find( 'i' ).css( 'cursor', 'not-allowed' );
-		} else {
-			this.ui.bulkMove.find( 'i' ).css( 'cursor', 'pointer' );
-			this.ui.bulkCopy.find( 'i' ).css( 'cursor', 'pointer' );
-		}
-	},
+	onBulkSelectAllCheckbox() {
+		const isChecked = this.$( '#bulk-select-all:checked' ).length > 0;
 
-	onClickBulkMove() {
-		if ( this.hasFolderInBulkSelection() ) {
-			return;
+		if ( isChecked ) {
+			elementor.templates.layout.selectAllCheckboxNormal();
 		}
 
-		$e.route( 'library/save-template', {
-			model: this.model,
-			context: SAVE_CONTEXTS.BULK_MOVE,
-		} );
+		this.updateBulkSelectedItems( isChecked );
+		elementor.templates.layout.handleBulkActionBarUi();
 	},
 
-	hasFolderInBulkSelection() {
-		const bulkSelectedItems = elementor.templates.getBulkSelectionItems();
+	updateBulkSelectedItems( isChecked ) {
+		document.querySelectorAll( '.bulk-selection-item-checkbox' ).forEach( function( checkbox ) {
+			checkbox.checked = isChecked;
+			const templateId = checkbox.dataset.template_id;
 
-		return this.collection.some( ( model ) => {
-			const templateId = model.get( 'template_id' );
-			const type = model.get( 'type' );
-
-			return bulkSelectedItems.has( templateId ) && 'folder' === type;
-		} );
-	},
-
-	onClickBulkCopy() {
-		if ( this.hasFolderInBulkSelection() ) {
-			return;
-		}
-
-		$e.route( 'library/save-template', {
-			model: this.model,
-			context: SAVE_CONTEXTS.BULK_COPY,
+			if ( isChecked ) {
+				elementor.templates.addBulkSelectionItem( templateId );
+			} else {
+				elementor.templates.removeBulkSelectionItem( templateId );
+			}
 		} );
 	},
 } );

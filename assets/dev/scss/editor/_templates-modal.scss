@@ -123,6 +123,7 @@ $remote-templates-items-space: 30px;
 			.quota-progress-container {
 				display: flex;
 				align-items: baseline;
+				margin-inline-start: auto;
 			}
 
 			.quota-progress-info {
@@ -455,34 +456,34 @@ $remote-templates-items-space: 30px;
 		}
 	}
 
-	.bulk-selection-action-bar {
-		display: none;
-		background: var(--e-a-bg-active);
-		padding: 10px 25px;
-		border-radius: 5px;
-		color: var(--e-a-bg-invert);
-		gap: 20px;
-		align-items: center;
-		flex: 1;
-
-		i {
-			cursor: pointer;
-			font-size: 15px;
-
-			&.disabled {
-				pointer-events: none;
-				opacity: 0.3;
-			}
-		}
-
-		.eicon-editor-close {
-			font-size: 20px;
-		}
-	}
-
-	#elementor-template-library-navigation-container {
+	#left-side-actions-slot {
 		all: unset;
 		display: contents;
+
+		.bulk-selection-action-bar {
+			display: flex;
+			flex: 1;
+			background: var(--e-a-bg-active);
+			padding: 10px 25px;
+			border-radius: 5px;
+			color: var(--e-a-bg-invert);
+			gap: 20px;
+			align-items: center;
+
+			i {
+				cursor: pointer;
+				font-size: 15px;
+
+				&.disabled {
+					pointer-events: none;
+					opacity: 0.3;
+				}
+			}
+
+			.eicon-editor-close {
+				font-size: 20px;
+			}
+		}
 
 		.elementor-template-library-navigation-container {
 			display: flex;
