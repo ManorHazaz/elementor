@@ -49,12 +49,14 @@ const TemplateLibraryTemplateView = Marionette.ItemView.extend( {
 	ui() {
 		return {
 			previewButton: '.elementor-template-library-template-preview',
+			bulkSelectionItemCheckbox: '.bulk-selection-item-checkbox',
 		};
 	},
 
 	events() {
 		return {
 			'click @ui.previewButton': 'onPreviewButtonClick',
+			'change @ui.bulkSelectionItemCheckbox': 'onSelectBulkSelectionItemCheckbox',
 		};
 	},
 
@@ -66,6 +68,16 @@ const TemplateLibraryTemplateView = Marionette.ItemView.extend( {
 		};
 
 		return elementor.hooks.applyFilters( 'elementor/editor/template-library/template/behaviors', behaviors, this );
+	},
+
+	onSelectBulkSelectionItemCheckbox( event ) {
+		if ( event?.target?.checked ) {
+			elementor.templates.addBulkSelectionItem( event.target.dataset.template_id );
+		} else {
+			elementor.templates.removeBulkSelectionItem( event.target.dataset.template_id );
+		}
+
+		elementor.templates.layout.handleBulkActionBarUi();
 	},
 } );
 

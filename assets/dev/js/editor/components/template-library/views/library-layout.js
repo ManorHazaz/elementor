@@ -8,7 +8,8 @@ var TemplateLibraryHeaderActionsView = require( 'elementor-templates/views/parts
 	TemplateLibraryConnectView = require( 'elementor-templates/views/parts/connect' ),
 	TemplateLibraryCloudStateView = require( 'elementor-templates/views/parts/cloud-states' ),
 	TemplateLibraryPreviewView = require( 'elementor-templates/views/parts/preview' ),
-	TemplateLibraryNavigationContainerView = require( 'elementor-templates/views/parts/navigation-container' );
+	TemplateLibraryNavigationContainerView = require( 'elementor-templates/views/parts/navigation-container' ),
+	TemplateLibraryBulkActionBarView = require( 'elementor-templates/views/parts/bulk-action-bar' );
 
 import { SAVE_CONTEXTS } from './../constants';
 
@@ -89,7 +90,9 @@ module.exports = elementorModules.common.views.modal.Layout.extend( {
 
 	updateViewCollection( models ) {
 		this.modalContent.currentView.collection.reset( models );
-		this.modalContent.currentView.ui.navigationContainer.html( ( new TemplateLibraryNavigationContainerView() ).render()?.el );
+
+		elementor.templates.clearBulkSelectionItems();
+		this.modalContent.currentView.ui.leftSideActionsSlot.html( ( new TemplateLibraryNavigationContainerView() ).render()?.el );
 	},
 
 	addTemplates( models ) {
@@ -159,6 +162,28 @@ module.exports = elementorModules.common.views.modal.Layout.extend( {
 		document.body.appendChild( iframe );
 
 		return iframe;
+	},
+
+	handleBulkActionBarUi() {
+		if ( elementor.templates.getBulkSelectionItems().size !== 0 ) {
+			this.modalContent.currentView.$el.addClass( 'has-bulk-selections' );
+			this.modalContent.currentView.$el.removeClass( 'no-bulk-selections' );
+
+			this.showBulkActionBar();
+		} else {
+			this.modalContent.currentView.$el.addClass( 'no-bulk-selections' );
+			this.modalContent.currentView.$el.removeClass( 'has-bulk-selections' );
+
+			this.hideBulkActionBar();
+		}
+	},
+
+	showBulkActionBar() {
+		this.modalContent.currentView.ui.leftSideActionsSlot.html( ( new TemplateLibraryBulkActionBarView() ).render()?.el );
+	},
+
+	hideBulkActionBar() {
+		this.modalContent.currentView.ui.leftSideActionsSlot.empty();
 	},
 
 	handleBulkActionBar() {
