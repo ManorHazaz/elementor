@@ -7,13 +7,12 @@ use WP_Error;
 use WP_REST_Response;
 use WP_REST_Request;
 use WP_REST_Server;
-
 use Elementor\Plugin;
-use Elementor\Modules\Variables\PropTypes\Color_Variable_Prop_Type;
-use Elementor\Modules\Variables\PropTypes\Font_Variable_Prop_Type;
+use Elementor\Modules\Variables\Module as Variables_Module;
 use Elementor\Modules\Variables\Storage\Repository as Variables_Repository;
 use Elementor\Modules\Variables\Storage\Exceptions\VariablesLimitReached;
 use Elementor\Modules\Variables\Storage\Exceptions\RecordNotFound;
+use Elementor\Modules\Variables\Storage\Exceptions\DuplicatedLabel;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -39,21 +38,25 @@ class Rest_Api {
 		$this->variables_repository = $variables_repository;
 	}
 
-	public function enough_permissions_to_perform_action() {
+	public function enough_permissions_to_perform_ro_action() {
 		return current_user_can( 'edit_posts' );
+	}
+
+	public function enough_permissions_to_perform_rw_action() {
+		return current_user_can( 'manage_options' );
 	}
 
 	public function register_routes() {
 		register_rest_route( self::API_NAMESPACE, '/' . self::API_BASE . '/list', [
 			'methods' => WP_REST_Server::READABLE,
 			'callback' => [ $this, 'get_variables' ],
-			'permission_callback' => [ $this, 'enough_permissions_to_perform_action' ],
+			'permission_callback' => [ $this, 'enough_permissions_to_perform_ro_action' ],
 		] );
 
 		register_rest_route( self::API_NAMESPACE, '/' . self::API_BASE . '/create', [
 			'methods' => WP_REST_Server::CREATABLE,
 			'callback' => [ $this, 'create_variable' ],
-			'permission_callback' => [ $this, 'enough_permissions_to_perform_action' ],
+			'permission_callback' => [ $this, 'enough_permissions_to_perform_rw_action' ],
 			'args' => [
 				'type' => [
 					'required' => true,
@@ -79,7 +82,7 @@ class Rest_Api {
 		register_rest_route( self::API_NAMESPACE, '/' . self::API_BASE . '/update', [
 			'methods' => WP_REST_Server::EDITABLE,
 			'callback' => [ $this, 'update_variable' ],
-			'permission_callback' => [ $this, 'enough_permissions_to_perform_action' ],
+			'permission_callback' => [ $this, 'enough_permissions_to_perform_rw_action' ],
 			'args' => [
 				'id' => [
 					'required' => true,
@@ -105,7 +108,7 @@ class Rest_Api {
 		register_rest_route( self::API_NAMESPACE, '/' . self::API_BASE . '/delete', [
 			'methods' => WP_REST_Server::EDITABLE,
 			'callback' => [ $this, 'delete_variable' ],
-			'permission_callback' => [ $this, 'enough_permissions_to_perform_action' ],
+			'permission_callback' => [ $this, 'enough_permissions_to_perform_rw_action' ],
 			'args' => [
 				'id' => [
 					'required' => true,
@@ -119,12 +122,24 @@ class Rest_Api {
 		register_rest_route( self::API_NAMESPACE, '/' . self::API_BASE . '/restore', [
 			'methods' => WP_REST_Server::EDITABLE,
 			'callback' => [ $this, 'restore_variable' ],
-			'permission_callback' => [ $this, 'enough_permissions_to_perform_action' ],
+			'permission_callback' => [ $this, 'enough_permissions_to_perform_rw_action' ],
 			'args' => [
 				'id' => [
 					'required' => true,
 					'type' => 'string',
 					'validate_callback' => [ $this, 'is_valid_variable_id' ],
+					'sanitize_callback' => [ $this, 'trim_and_sanitize_text_field' ],
+				],
+				'label' => [
+					'required' => false,
+					'type' => 'string',
+					'validate_callback' => [ $this, 'is_valid_variable_label' ],
+					'sanitize_callback' => [ $this, 'trim_and_sanitize_text_field' ],
+				],
+				'value' => [
+					'required' => false,
+					'type' => 'string',
+					'validate_callback' => [ $this, 'is_valid_variable_value' ],
 					'sanitize_callback' => [ $this, 'trim_and_sanitize_text_field' ],
 				],
 			],
@@ -156,10 +171,9 @@ class Rest_Api {
 	}
 
 	public function is_valid_variable_type( $type ) {
-		return in_array( $type, [
-			Color_Variable_Prop_Type::get_key(),
-			Font_Variable_Prop_Type::get_key(),
-		], true );
+		$allowed_types = array_keys( Variables_Module::instance()->get_variable_types_registry()->all() );
+
+		return in_array( $type, $allowed_types, true );
 	}
 
 	public function is_valid_variable_label( $label ) {
@@ -272,6 +286,8 @@ class Rest_Api {
 
 		$result = $this->variables_repository->delete( $id );
 
+		$this->clear_cache();
+
 		return $this->success_response( [
 			'variable' => $result['variable'],
 			'watermark' => $result['watermark'],
@@ -289,7 +305,21 @@ class Rest_Api {
 	private function restore_existing_variable( WP_REST_Request $request ) {
 		$id = $request->get_param( 'id' );
 
-		$result = $this->variables_repository->restore( $id );
+		$overrides = [];
+
+		$label = $request->get_param( 'label' );
+		if ( $label ) {
+			$overrides['label'] = $label;
+		}
+
+		$value = $request->get_param( 'value' );
+		if ( $value ) {
+			$overrides['value'] = $value;
+		}
+
+		$result = $this->variables_repository->restore( $id, $overrides );
+
+		$this->clear_cache();
 
 		return $this->success_response( [
 			'variable' => $result['variable'],
@@ -328,6 +358,14 @@ class Rest_Api {
 				self::HTTP_BAD_REQUEST,
 				'invalid_variable_limit_reached',
 				__( 'Reached the maximum number of variables', 'elementor' )
+			);
+		}
+
+		if ( $e instanceof DuplicatedLabel ) {
+			return $this->prepare_error_response(
+				self::HTTP_BAD_REQUEST,
+				'duplicated_label',
+				__( 'Variable label already exists', 'elementor' )
 			);
 		}
 

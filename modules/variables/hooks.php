@@ -2,6 +2,9 @@
 
 namespace Elementor\Modules\Variables;
 
+use Elementor\Modules\Variables\Classes\Variable_Types_Registry;
+use Elementor\Modules\Variables\PropTypes\Color_Variable_Prop_Type;
+use Elementor\Modules\Variables\PropTypes\Font_Variable_Prop_Type;
 use Elementor\Plugin;
 use Elementor\Core\Files\CSS\Post as Post_CSS;
 use Elementor\Modules\Variables\Classes\CSS_Renderer as Variables_CSS_Renderer;
@@ -10,6 +13,7 @@ use Elementor\Modules\Variables\Classes\Rest_Api as Variables_API;
 use Elementor\Modules\Variables\Storage\Repository as Variables_Repository;
 use Elementor\Modules\Variables\Classes\Style_Schema;
 use Elementor\Modules\Variables\Classes\Style_Transformers;
+use Elementor\Modules\Variables\Classes\Variables;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -26,7 +30,17 @@ class Hooks {
 			->filter_for_style_schema()
 			->register_css_renderer()
 			->register_fonts()
-			->register_api_endpoints();
+			->register_api_endpoints()
+			->register_variable_types();
+
+		return $this;
+	}
+
+	private function register_variable_types() {
+		add_action( 'elementor/variables/register', function ( Variable_Types_Registry $registry ) {
+			$registry->register( Color_Variable_Prop_Type::get_key(), new Color_Variable_Prop_Type() );
+			$registry->register( Font_Variable_Prop_Type::get_key(), new Font_Variable_Prop_Type() );
+		} );
 
 		return $this;
 	}
@@ -41,6 +55,7 @@ class Hooks {
 
 	private function register_styles_transformers() {
 		add_action( 'elementor/atomic-widgets/styles/transformers/register', function ( $registry ) {
+			Variables::init( $this->variables_repository() );
 			( new Style_Transformers() )->append_to( $registry );
 		} );
 
