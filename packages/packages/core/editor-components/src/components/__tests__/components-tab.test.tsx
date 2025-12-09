@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { renderWithStore, renderWithTheme } from 'test-utils';
+import { setDocumentModifiedStatus } from '@elementor/editor-documents';
 import {
 	__createStore,
 	__dispatch as dispatch,
@@ -7,8 +8,7 @@ import {
 	type SliceState,
 	type Store,
 } from '@elementor/store';
-import { jest } from '@jest/globals';
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 
 import { slice } from '../../store/store';
 import { loadComponents } from '../../store/thunks';
@@ -16,6 +16,10 @@ import { ComponentSearch } from '../components-tab/component-search';
 import { ComponentItem } from '../components-tab/components-item';
 import { ComponentsList } from '../components-tab/components-list';
 import { SearchProvider } from '../components-tab/search-provider';
+
+jest.mock( '@elementor/editor-documents', () => ( {
+	setDocumentModifiedStatus: jest.fn(),
+} ) );
 
 jest.mock( '@elementor/editor-canvas', () => ( {
 	startDragElementFromPanel: jest.fn(),
@@ -38,12 +42,12 @@ jest.mock( '../create-component-form/utils/replace-element-with-component', () =
 } ) );
 
 const mockComponents = [
-	{ id: 1, name: 'Button Component' },
-	{ id: 2, name: 'Text Component' },
-	{ id: 3, name: 'Image Component' },
-	{ id: 4, name: 'Test Component 1' },
-	{ id: 5, name: 'Test Component 2' },
-	{ id: 6, name: 'Valid Component' },
+	{ id: 1, name: 'Button Component', uid: 'f73880da-522c-442e-815a-b2c9849b7415' },
+	{ id: 2, name: 'Text Component', uid: 'f73880da-522c-442e-815a-b2c9849b7416' },
+	{ id: 3, name: 'Image Component', uid: 'f73880da-522c-442e-815a-b2c9849b7417' },
+	{ id: 4, name: 'Test Component 1', uid: 'f73880da-522c-442e-815a-b2c9849b7418' },
+	{ id: 5, name: 'Test Component 2', uid: 'f73880da-522c-442e-815a-b2c9849b7419' },
+	{ id: 6, name: 'Valid Component', uid: 'f73880da-522c-442e-815a-b2c9849b7420' },
 ];
 
 describe( 'ComponentsTab', () => {
@@ -130,7 +134,7 @@ describe( 'ComponentsTab', () => {
 			const buttonComponent = mockComponents[ 0 ];
 
 			// Act
-			renderWithTheme( <ComponentItem component={ buttonComponent } /> );
+			renderWithStore( <ComponentItem component={ buttonComponent } />, store );
 
 			// Assert
 			const componentItem = screen.getByRole( 'button', { name: /Button Component/ } );
@@ -211,6 +215,41 @@ describe( 'ComponentsTab', () => {
 			// Assert
 			expect( screen.getByText( 'Sorry, nothing matched' ) ).toBeInTheDocument();
 			expect( screen.getByText( 'Try something else.' ) ).toBeInTheDocument();
+		} );
+
+		it( 'should remove component from list when archived', async () => {
+			// Arrange
+			act( () => {
+				dispatch( slice.actions.load( mockComponents ) );
+			} );
+
+			// Act
+			renderWithStore(
+				<SearchProvider localStorageKey="test-search">
+					<ComponentsList />
+				</SearchProvider>,
+				store
+			);
+
+			// Assert
+			expect( screen.getByText( 'Button Component' ) ).toBeInTheDocument();
+			expect( screen.getByText( 'Text Component' ) ).toBeInTheDocument();
+
+			// Act
+			const moreActionsButtons = screen.getAllByLabelText( 'More actions' );
+			const buttonComponentMoreActions = moreActionsButtons[ 0 ];
+			fireEvent.click( buttonComponentMoreActions );
+
+			const archiveButton = await screen.findByText( 'Archive' );
+			fireEvent.click( archiveButton );
+
+			// Assert
+			await waitFor( () => {
+				expect( screen.queryByText( 'Button Component' ) ).not.toBeInTheDocument();
+			} );
+			expect( screen.getByText( 'Text Component' ) ).toBeInTheDocument();
+			expect( screen.getByText( 'Image Component' ) ).toBeInTheDocument();
+			expect( jest.mocked( setDocumentModifiedStatus ) ).toHaveBeenCalledWith( true );
 		} );
 	} );
 } );

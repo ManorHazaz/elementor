@@ -1,14 +1,17 @@
 
 export const ONBOARDING_EVENTS_MAP = {
 	UPGRADE_NOW_S3: 'core_onboarding_s3_upgrade_now',
-	HELLO_BIZ_CONTINUE: 'core_onboarding_s2_hellobiz',
-	THEME_CHOICE: 'core_onboarding_theme_choice',
+	THEME_INSTALLED: 'core_onboarding_s2_theme_installed',
+	THEME_MARKED: 'core_onboarding_s2_theme_marked',
 	CORE_ONBOARDING: 'core_onboarding',
 	CONNECT_STATUS: 'core_onboarding_connect_status',
 	STEP1_END_STATE: 'core_onboarding_s1_end_state',
 	STEP2_END_STATE: 'core_onboarding_s2_end_state',
+	STEP2_THEMES_LOADED: 'core_onboarding_s2_themes_loaded',
 	STEP3_END_STATE: 'core_onboarding_s3_end_state',
 	STEP4_END_STATE: 'core_onboarding_s4_end_state',
+	STEP4_LOADED: 'core_onboarding_s4_loaded',
+	STEP4_SITE_STARTER: 'core_onboarding_s4_site_starter',
 	STEP4_RETURN_STEP4: 'core_onboarding_s4_return',
 	EDITOR_LOADED_FROM_ONBOARDING: 'editor_loaded_from_onboarding',
 	POST_ONBOARDING_1ST_CLICK: 'post_onboarding_1st_click',
@@ -21,6 +24,7 @@ export const ONBOARDING_EVENTS_MAP = {
 	CREATE_ACCOUNT_STATUS: 'core_onboarding_create_account_status',
 	STEP1_CLICKED_CONNECT: 'core_onboarding_s1_clicked_connect',
 	AB_101_START_AS_FREE_USER: 'ab_101_start_as_free_user',
+	SESSION_REPLAY_START: 'onboarding_session_replay_start',
 };
 
 export const ONBOARDING_STEP_NAMES = {

@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { type ReactElement, useEffect, useState } from 'react';
+import { type ReactElement, useEffect, useMemo, useState } from 'react';
+import { isClassState } from '@elementor/editor-styles';
 import { stylesRepository, useUserStylesCapability, validateStyleLabel } from '@elementor/editor-styles-repository';
 import { EditableField, EllipsisWithTooltip, useEditable } from '@elementor/editor-ui';
 import { DotsVerticalIcon } from '@elementor/icons';
@@ -20,7 +21,7 @@ import { __ } from '@wordpress/i18n';
 
 import { useStyle } from '../../contexts/style-context';
 import { CssClassProvider } from './css-class-context';
-import { CssClassMenu } from './css-class-menu';
+import { CssClassMenu, useElementStates } from './css-class-menu';
 
 type CssClassItemProps = {
 	id: string | null;
@@ -42,6 +43,8 @@ const CHIP_SIZE = 'tiny';
 export function CssClassItem( props: CssClassItemProps ) {
 	const { chipProps, icon, color: colorProp, fixed, ...classProps } = props;
 	const { id, provider, label, isActive, onClickActive, renameLabel, setError } = classProps;
+
+	const { elementStates } = useElementStates();
 
 	const { meta, setMetaState } = useStyle();
 	const popupState = usePopupState( { variant: 'popover' } );
@@ -75,12 +78,19 @@ export function CssClassItem( props: CssClassItemProps ) {
 
 	const isShowingState = isActive && meta.state;
 
+	const stateLabel = useMemo( () => {
+		if ( isClassState( meta.state ) ) {
+			return elementStates.find( ( state ) => state.value === meta.state )?.label;
+		}
+
+		return meta.state;
+	}, [ meta.state, elementStates ] );
+
 	useEffect( () => {
 		if ( convertedFromLocalId && id === convertedFromLocalId ) {
 			clearConvertedFromLocalId();
 			openEditMode();
 		}
-		// eslint-disable-next-line react-compiler/react-compiler
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [ id, convertedFromLocalId ] );
 
@@ -138,7 +148,7 @@ export function CssClassItem( props: CssClassItemProps ) {
 						label={
 							isShowingState ? (
 								<Stack direction="row" gap={ 0.5 } alignItems="center">
-									<Typography variant="inherit">{ meta.state }</Typography>
+									<Typography variant="inherit">{ stateLabel }</Typography>
 									<DotsVerticalIcon fontSize="tiny" />
 								</Stack>
 							) : undefined

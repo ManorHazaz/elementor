@@ -47,14 +47,15 @@ class Size_Constants {
 			...self::LENGTH_UNITS,
 			self::UNIT_PERCENT,
 			self::UNIT_AUTO,
+			self::UNIT_CUSTOM,
 		];
 	}
 
 	private static function units_without_auto(): array {
-		return [ ...self::LENGTH_UNITS, self::UNIT_PERCENT ];
+		return [ ...self::LENGTH_UNITS, self::UNIT_PERCENT, self::UNIT_CUSTOM ];
 	}
 
-	public static function layout() {
+	public static function layout(): array {
 		return self::units_without_auto();
 	}
 
@@ -66,24 +67,25 @@ class Size_Constants {
 		return self::units_without_auto();
 	}
 
-	public static function anchor_offset() {
-		return self::LENGTH_UNITS;
+	public static function anchor_offset(): array {
+		return [ ...self::LENGTH_UNITS, self::UNIT_CUSTOM ];
 	}
 
 	public static function typography(): array {
 		return self::units_without_auto();
 	}
 
-	public static function stroke_width() {
+	public static function stroke_width(): array {
 		return [
 			self::UNIT_PX,
 			self::UNIT_EM,
 			self::UNIT_REM,
+			self::UNIT_CUSTOM,
 		];
 	}
 
-	public static function transition() {
-		return self::TIME_UNITS;
+	public static function transition(): array {
+		return [ ...self::TIME_UNITS, self::UNIT_CUSTOM ];
 	}
 
 	public static function border(): array {
@@ -92,7 +94,7 @@ class Size_Constants {
 
 
 	public static function opacity(): array {
-		return [ self::UNIT_PERCENT ];
+		return [ self::UNIT_PERCENT, self::UNIT_CUSTOM ];
 	}
 
 	public static function box_shadow(): array {
@@ -100,30 +102,30 @@ class Size_Constants {
 	}
 
 	public static function rotate(): array {
-		return self::ANGLE_UNITS;
+		return [ ...self::ANGLE_UNITS, self::UNIT_CUSTOM ];
 	}
 
 	public static function transform(): array {
 		return self::units_without_auto();
 	}
 
-	public static function drop_shadow() {
-		return self::LENGTH_UNITS;
+	public static function drop_shadow(): array {
+		return [ ...self::LENGTH_UNITS, self::UNIT_CUSTOM ];
 	}
 
-	public static function blur_filter() {
-		return self::LENGTH_UNITS;
+	public static function blur_filter(): array {
+		return [ ...self::LENGTH_UNITS, self::UNIT_CUSTOM ];
 	}
 
-	public static function intensity_filter() {
-		return [ self::UNIT_PERCENT ];
+	public static function intensity_filter(): array {
+		return [ self::UNIT_PERCENT, self::UNIT_CUSTOM ];
 	}
 
-	public static function color_tone_filter() {
-		return [ self::UNIT_PERCENT ];
+	public static function color_tone_filter(): array {
+		return [ self::UNIT_PERCENT, self::UNIT_CUSTOM ];
 	}
 
-	public static function hue_rotate_filter() {
-		return self::ANGLE_UNITS;
+	public static function hue_rotate_filter(): array {
+		return [ ...self::ANGLE_UNITS, self::UNIT_CUSTOM ];
 	}
 }
